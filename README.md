@@ -21,7 +21,6 @@ python3
 json
 requests
 urllib.parse
-configobj
 time
 getpass
 ```
@@ -43,6 +42,27 @@ JELLY_URLBASE = http://127.0.0.1:8096/
 ---
 
 ## Using
+Since version 0.0.2, a seuptools installer is available.
+Use it via `pip install .`, then you can run with `emby2jelly`.
+```
+usage: emby2jelly [-h] [--config CONFIG] [--tofile TOFILE | --fromfile FROMFILE] [--new-user-pw NEW_USER_PW] [-q | -v]
+
+Migrate from Emby to Jellyfin (or Jellyfin to Jellyfin)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG, -c CONFIG
+                        Config file to read endpoints and API keys, See README
+  --tofile TOFILE, -t TOFILE
+                        run the script saving viewed statuses to a file instead of sending them to destination server
+  --fromfile FROMFILE, -f FROMFILE
+                        run the script with a file as source server and send viewed statuses to destination serve
+  --new-user-pw NEW_USER_PW, -p NEW_USER_PW
+  -q, --quiet
+  -v, --verbose
+```
+
+Directly from the git checkout:
 ```
 python3 APImain.py 
 Migrate from Emby to Jellyfin (or Jellyfin to Jellyfin)

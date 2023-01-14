@@ -12,7 +12,7 @@ data_files = []
 
 setuptools.setup(
     name='Emby2Jelly',
-    version='0.0.1',
+    version='0.0.2',
     author='Marc Vieg/Gunter Cobaye/Richard Schwab/Nothing4You/Nicola Canepa',
     author_email='canne74@gmail.com',
     description='Recreate users from emby to jellyfin and migrate their watched content for movies and TV shows',
@@ -24,7 +24,6 @@ setuptools.setup(
     data_files=data_files,
     install_requires=[
         'requests',
-        'configobj',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
