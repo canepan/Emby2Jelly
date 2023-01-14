@@ -25,11 +25,11 @@ def createConfig(file_obj):
     Create a config file
     """
     config = ConfigParser()
-    config['Emby'] = {'EMBY_APIKEY': 'aaaabbbbbbbcccccccccccccdddddddd', 'EMBY_URLBASE': 'http://127.0.0.1:8096/emby/'}
+    config["Emby"] = {"EMBY_APIKEY": "aaaabbbbbbbcccccccccccccdddddddd", "EMBY_URLBASE": "http://127.0.0.1:8096/emby/"}
 
-    config['Jelly'] = {
-        'JELLY_APIKEY': 'eeeeeeeeeeeeeeeffffffffffffffffggggggggg',
-        'JELLY_URLBASE': 'http://127.0.0.1:8096/jellyfin/',
+    config["Jelly"] = {
+        "JELLY_APIKEY": "eeeeeeeeeeeeeeeffffffffffffffffggggggggg",
+        "JELLY_URLBASE": "http://127.0.0.1:8096/jellyfin/",
     }
 
     config.write(file_obj)
@@ -56,12 +56,12 @@ class MediaServer(object):
         self.apikey = apikey
         self.urlbase = urlbase
         self.log = log
-        self.auth_headers = {'accept': 'application/json', 'api_key': self.apikey}
+        self.auth_headers = {"accept": "application/json", "api_key": self.apikey}
         self._users = None
         self._selected_users = None
 
     def get_users_list(self):
-        api_url = '{0}Users'.format(self.urlbase)
+        api_url = "{0}Users".format(self.urlbase)
         get_params = {"api_key": self.apikey}
 
         self.log.debug("Get user list for {}".format(api_url))
@@ -83,7 +83,7 @@ class MediaServer(object):
                 return
             except AttributeError:
                 pass
-            self._selected_users = [user['Name'] for user in self.users]
+            self._selected_users = [user["Name"] for user in self.users]
         return self._selected_users
 
 
@@ -100,12 +100,12 @@ class Emby(MediaServer):
         user_playlist = {}
         for user in self.users:
             userCount += 1
-            if (user['Name'] in self.selected_users) and (user['Name'] is not None):
-                migration_data[user['Name']] = []
+            if (user["Name"] in self.selected_users) and (user["Name"] is not None):
+                migration_data[user["Name"]] = []
                 played_item = 0
-                self.log.debug("{0} ({2} / {3}): {1}".format(user['Name'], user['Id'], userCount, user_total))
+                self.log.debug("{0} ({2} / {3}): {1}".format(user["Name"], user["Id"], userCount, user_total))
 
-                api_url = '{0}Users/{1}/Items'.format(self.urlbase, user['Id'])
+                api_url = "{0}Users/{1}/Items".format(self.urlbase, user["Id"])
                 get_params = {
                     "Filters": "IsPlayed",
                     "IncludeItemTypes": "Movie,Episode",
@@ -119,20 +119,20 @@ class Emby(MediaServer):
                     for item in user_playlist["Items"]:
 
                         played_item += 1
-                        api_url = '{0}Users/{1}/Items/{2}'.format(self.urlbase, user['Id'], item['Id'])
+                        api_url = "{0}Users/{1}/Items/{2}".format(self.urlbase, user["Id"], item["Id"])
                         self.log.debug("Get itemDto for {}/{}".format(user["Id"], item["Id"]))
                         get_params = {"api_key": self.apikey}
                         response = requests.get(api_url, headers=self.auth_headers, params=get_params)
                         itemDto = decode_response(response, log=self.log)
                         try:
-                            itemDto["ProviderIds"].pop('sonarr', None)
+                            itemDto["ProviderIds"].pop("sonarr", None)
                             migration_media = {
-                                'Type': item['Type'],
-                                'EmbyId': item['Id'],
-                                'Name': item['Name'],
-                                'ProviderIds': itemDto["ProviderIds"],
+                                "Type": item["Type"],
+                                "EmbyId": item["Id"],
+                                "Name": item["Name"],
+                                "ProviderIds": itemDto["ProviderIds"],
                             }
-                            migration_data[user['Name']].append(migration_media)
+                            migration_data[user["Name"]].append(migration_media)
                         except Exception:
                             pass
                 except Exception:
@@ -157,22 +157,22 @@ class Jelly(MediaServer):
         """
         self.log.info("\033[96mJelly has {0} Users\033[00m".format(len(self.users)))
 
-        jelly_users_id_dict = {'Name': 0}
+        jelly_users_id_dict = {"Name": 0}
         created_users = []
 
-        self.report['users'] = ''
+        self.report["users"] = ""
         for jUser in self.users:
-            jelly_users_id_dict[jUser['Name']] = jUser['Id']
+            jelly_users_id_dict[jUser["Name"]] = jUser["Id"]
             # Jelly does not accept char space in userNames
         for eUser in migration_data:
             user_name = eUser.replace(" ", "_")
             if user_name in jelly_users_id_dict.keys():
                 self.log.debug("Jelly already knows {0} (Id {1})".format(user_name, jelly_users_id_dict[user_name]))
-                self.report['users'] += "{0} (Emby) is  {1} (Jelly)\n".format(eUser, user_name)
+                self.report["users"] += "{0} (Emby) is  {1} (Jelly)\n".format(eUser, user_name)
             else:
                 created_users.append(eUser)
                 self.log.info("Creating {}".format(eUser))
-                api_url = '{0}Users/New'.format(self.urlbase)
+                api_url = "{0}Users/New".format(self.urlbase)
                 get_params = {"api_key": self.apikey}
 
                 self.log.debug("Post user {} for {}".format(user_name, api_url))
@@ -180,16 +180,16 @@ class Jelly(MediaServer):
                     api_url,
                     headers=self.auth_headers,
                     params=get_params,
-                    json={'name': user_name, 'Password': self.set_pw(user_name, self.new_user_pw)},
+                    json={"name": user_name, "Password": self.set_pw(user_name, self.new_user_pw)},
                 )
                 text = decode_response(response, log=self.log)
                 if text:
                     self.log.debug(text)
-                    self.report['users'] += "{} on Jelly".format(text)
+                    self.report["users"] += "{} on Jelly".format(text)
         return created_users
         # update the jelly Users in case we created any
 
-    '''
+    """
     ### I originaly wanted to ask Jellyfin server for Any item matching the provider ID of the migration_media,
     ### But it seems the Jellyfin api doesn't implement this (seen this in emby api "documentation")
     def normalise_migration_data():
@@ -221,10 +221,10 @@ class Jelly(MediaServer):
                     normalized_migration_data[user['Name'].replace("_"," ")].append(migration_media)
                     #else:
                     #    continue
-    '''
+    """
 
     def get_user_library(self, user):
-        self.log.debug("getting jelly DB for {0}".format(user['Name'].replace("_", " ")))
+        self.log.debug("getting jelly DB for {0}".format(user["Name"].replace("_", " ")))
         api_url = "{0}Users/{1}/Items".format(self.urlbase, user["Id"])
         get_params = {
             "Recursive": "True",
@@ -241,7 +241,7 @@ class Jelly(MediaServer):
             try:
                 user_name = user["Name"].replace("_", " ")
                 toSend = len(migration_data[user_name])
-                self.report[user_name] = {'ok': 0, 'nok': [], 'tosend': toSend}
+                self.report[user_name] = {"ok": 0, "nok": [], "tosend": toSend}
 
                 ok = 0
                 nok = 0
@@ -252,29 +252,29 @@ class Jelly(MediaServer):
                     )
                     if jelly_id is not None:
                         jelly_headers_movie = {
-                            'item': json.dumps(
-                                {'Name': migration_media['Name'], 'Id': jelly_id, 'Played': 1}, separators=(',', ':')
+                            "item": json.dumps(
+                                {"Name": migration_media["Name"], "Id": jelly_id, "Played": 1}, separators=(",", ":")
                             ),
                         }
                         jelly_headers_movie.update(self.auth_headers)
-                        api_url = '{0}Users/{1}/played_items/{2}'.format(self.urlbase, user['Id'], jelly_id)
+                        api_url = "{0}Users/{1}/played_items/{2}".format(self.urlbase, user["Id"], jelly_id)
                         self.log.debug("Update played item for {}: {}".format(user["Name"], api_url))
                         response = requests.post(api_url, headers=jelly_headers_movie, params={"api_key": self.apikey})
                         if decode_response(response, log=self.log) is not None:
                             ok += 1
-                            self.report[user_name]['ok'] += 1
+                            self.report[user_name]["ok"] += 1
                             self.log.debug(
                                 "\033[92mOK ! {2}/{3} - {0} has been seen by {1}\n\033[00m".format(
-                                    migration_media['Name'], user['Name'], ok, toSend
+                                    migration_media["Name"], user["Name"], ok, toSend
                                 )
                             )
                             # return
                     else:
                         nok += 1
-                        self.report[user_name]['nok'].append(migration_media)
+                        self.report[user_name]["nok"].append(migration_media)
                         self.log.error(
                             "Couldn't find Id for {0}\n{1}".format(
-                                migration_media['Name'], migration_media['ProviderIds']
+                                migration_media["Name"], migration_media["ProviderIds"]
                             )
                         )
             except TypeError:
@@ -282,43 +282,43 @@ class Jelly(MediaServer):
                 pass
 
     def search_by_name(self, migration_media, Library):
-        for jelly_movie in Library['Items']:
-            if jelly_movie['Name'] == migration_media['Name']:
-                self.log.debug("found by name {0}".format(jelly_movie['Name']))
-                return jelly_movie['Id']
+        for jelly_movie in Library["Items"]:
+            if jelly_movie["Name"] == migration_media["Name"]:
+                self.log.debug("found by name {0}".format(jelly_movie["Name"]))
+                return jelly_movie["Id"]
         return None
 
     def search_jelly_library(self, migration_media, library):
-        for item in library['Items']:
+        for item in library["Items"]:
             if item["Type"] != migration_media["Type"]:
                 continue
 
-            for it_prov, it_id in item['ProviderIds'].items():
-                for prov_name, prov_id in migration_media['ProviderIds'].items():
+            for it_prov, it_id in item["ProviderIds"].items():
+                for prov_name, prov_id in migration_media["ProviderIds"].items():
                     if it_prov.lower() == prov_name.lower() and it_id == prov_id:
-                        return item['Id']
+                        return item["Id"]
         return None
 
     def generate_report(self):
         self.report_str.extend(
-            ["", "", "", "                      ### Emby2Jelly ###", "", "", self.report['users'], "", ""]
+            ["", "", "", "                      ### Emby2Jelly ###", "", "", self.report["users"], "", ""]
         )
         for user in self.users:
-            user_name = user['Name'].replace("_", " ")
+            user_name = user["Name"].replace("_", " ")
             if user_name in self.selected_users:
                 self.report_str.append("--- {0} ---".format(user_name))
                 self.report_str.append(
-                    "Medias Migrated : {0} / {1}".format(self.report[user_name]['ok'], self.report[user_name]['tosend'])
+                    "Medias Migrated : {0} / {1}".format(self.report[user_name]["ok"], self.report[user_name]["tosend"])
                 )
-                if self.report[user_name]['nok'] != []:
+                if self.report[user_name]["nok"] != []:
                     self.report_str.append(
                         "Unfortunately, I Missed {0} Medias :".format(
-                            self.report[user_name]['tosend'] - self.report[user_name]['ok']
+                            self.report[user_name]["tosend"] - self.report[user_name]["ok"]
                         )
                     )
-                    self.report_str.append(list(self.report[user_name]['nok']))
-        with open('RESULTS.txt', 'w') as outfile:
-            outfile.write('\n'.join(self.report_str))
+                    self.report_str.append(list(self.report[user_name]["nok"]))
+        with open("RESULTS.txt", "w") as outfile:
+            outfile.write("\n".join(self.report_str))
             outfile.close()
 
     def set_pw(self, u, new_user_pw):
@@ -328,8 +328,8 @@ class Jelly(MediaServer):
             return new_user_pw
         while 1:
             self.log.info("\nEnter password for user {0}".format(u))
-            p1 = getpass.getpass(prompt='Password : ')
-            p2 = getpass.getpass(prompt='confirm   : ')
+            p1 = getpass.getpass(prompt="Password : ")
+            p2 = getpass.getpass(prompt="confirm   : ")
             if p1 == p2:
                 if p1 == "":
                     self.log.warning("Warning ! Password is set to empty !")
@@ -358,26 +358,26 @@ def parse_args(argv):
         "--config",
         "-c",
         default="settings.ini",
-        type=argparse.FileType('r'),
+        type=argparse.FileType("r"),
         help="Config file to read endpoints and API keys, See README",
     )
     g = parser.add_mutually_exclusive_group()
     g.add_argument(
         "--tofile",
         "-t",
-        type=argparse.FileType('w'),
+        type=argparse.FileType("w"),
         help="run the script saving viewed statuses to a file instead of sending them to destination server",
     )
     g.add_argument(
         "--fromfile",
         "-f",
-        type=argparse.FileType('r'),
+        type=argparse.FileType("r"),
         help="run the script with a file as source server and send viewed statuses to destination serve",
     )
     parser.add_argument("--new-user-pw", "-p")
     g = parser.add_mutually_exclusive_group()
-    g.add_argument('-q', '--quiet', action='store_true')
-    g.add_argument('-v', '--verbose', action='store_true')
+    g.add_argument("-q", "--quiet", action="store_true")
+    g.add_argument("-v", "--verbose", action="store_true")
     cfg = parser.parse_args(argv)
     cfg.log = setup_logging(__name__, cfg.verbose, cfg.quiet)
     return cfg
@@ -419,8 +419,8 @@ def main(argv=None):
         emby = Emby(
             selected_users=selected_users,
             log=cfg.log,
-            apikey=app_config['Emby']['EMBY_APIKEY'],
-            urlbase=app_config['Emby']['EMBY_URLBASE'],
+            apikey=app_config["Emby"]["EMBY_APIKEY"],
+            urlbase=app_config["Emby"]["EMBY_URLBASE"],
         )
         migration_data = emby.get_watched_status()
         if cfg.tofile is not None:
@@ -433,8 +433,8 @@ def main(argv=None):
             new_user_pw=cfg.new_user_pw,
             selected_users=selected_users,
             log=cfg.log,
-            apikey=app_config['Jelly']['JELLY_APIKEY'],
-            urlbase=app_config['Jelly']['JELLY_URLBASE'],
+            apikey=app_config["Jelly"]["JELLY_APIKEY"],
+            urlbase=app_config["Jelly"]["JELLY_URLBASE"],
         )
     jelly.send_watched_status(migration_data)
     created_users = jelly.compare_users(migration_data)
